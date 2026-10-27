@@ -1,0 +1,54 @@
+name: GitHub Classroom Workflow
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '.github/badges/points.svg'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Autograding
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Valgrind
+        run: sudo apt-get update && sudo apt-get install -y valgrind
+
+      - name: Grade BST
+        id: grading
+        continue-on-error: true
+        run: python3 .github/scripts/grade.py
+
+      - name: Commit points badge
+        if: always() && steps.grading.outcome != 'skipped'
+        run: |
+          if [ ! -f .github/badges/points.svg ]; then
+            echo 'Badge was not created; inspect Grade BST logs.'
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/badges/points.svg
+          if ! git diff --cached --quiet; then
+            git commit -m 'Update points badge'
+            git push
+          else
+            echo 'Badge unchanged.'
+          fi
+
+      - name: Report grading result
+        if: always() && steps.grading.outcome != 'skipped'
+        env:
+          GRADING_OUTCOME: ${{ steps.grading.outcome }}
+        run: |
+          if [ "$GRADING_OUTCOME" != 'success' ]; then
+            echo 'One or more BST tests failed, or grader encountered an error.'
+            exit 1
+          fi
