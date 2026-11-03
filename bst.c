@@ -8,15 +8,20 @@
  */
 void bs_put(BST *ptree, int x)
 {
+        Elm *path[10000];
+        int n = 0;
         Elm **p = &ptree->root;
 
         while (*p != NULL) {
+                if (x == (*p)->x)
+                        return;
+
+                path[n++] = *p;
+
                 if (x < (*p)->x)
                         p = &(*p)->L;
-                else if (x > (*p)->x)
-                        p = &(*p)->R;
                 else
-                        return;
+                        p = &(*p)->R;
         }
 
         *p = (Elm *)malloc(sizeof(Elm));
@@ -26,41 +31,27 @@ void bs_put(BST *ptree, int x)
         (*p)->L = NULL;
         (*p)->R = NULL;
 
-        Elm *path[10000];
-        int n = 0;
-        Elm *q = ptree->root;
-
-        while (q != NULL) {
-                path[n++] = q;
-
-                if (x < q->x)
-                        q = q->L;
-                else if (x > q->x)
-                        q = q->R;
-                else
-                        break;
-        }
-
         for (int i = n - 1; i >= 0; i--) {
-                q = path[i];
+                Elm *v = path[i];
 
-                int lh = q->L ? q->L->height : 0;
-                int rh = q->R ? q->R->height : 0;
+                int lh = v->L ? v->L->height : 0;
+                int rh = v->R ? v->R->height : 0;
 
-                q->height = (lh > rh ? lh : rh) + 1;
-                q->len = 1 + (q->L ? q->L->len : 0)
-                           + (q->R ? q->R->len : 0);
+                v->height = (lh > rh ? lh : rh) + 1;
+                v->len = 1 + (v->L ? v->L->len : 0)
+                           + (v->R ? v->R->len : 0);
         }
 }
 
 Elm *bs_get(const BST *ptree, int x)
 {
-        Elm *p = ptree->root;
+           Elm *p = ptree->root;
 
         while (p != NULL) {
                 if (x == p->x)
                         return p;
-                else if (x < p->x)
+
+                if (x < p->x)
                         p = p->L;
                 else
                         p = p->R;
@@ -77,18 +68,19 @@ Elm *bs_get(const BST *ptree, int x)
  */
 Elm *bs_get(const BST *ptree, int x)
 {
-Elm *p = ptree->root;
+  Elm *p = ptree->root;
 
         while (p != NULL) {
                 if (x == p->x)
                         return p;
-                else if (x < p->x)
+
+                if (x < p->x)
                         p = p->L;
                 else
                         p = p->R;
         }
 
-        return NULL;       // Функцийг хэрэгжүүлнэ үү
+        return NULL;     // Функцийг хэрэгжүүлнэ үү
 }
 
 /*
@@ -97,9 +89,9 @@ Elm *p = ptree->root;
  */
 void bs_del(BST *ptree, int x)
 {
-Elm **p = &ptree->root;
-        Elm *path[10000];
+Elm *path[10000];
         int n = 0;
+        Elm **p = &ptree->root;
 
         while (*p != NULL && (*p)->x != x) {
                 path[n++] = *p;
@@ -115,57 +107,53 @@ Elm **p = &ptree->root;
 
         Elm *q = *p;
 
-        if (q->L == NULL) {
-                *p = q->R;
+        if (q->L == NULL || q->R == NULL) {
+                *p = q->L ? q->L : q->R;
                 free(q);
-        }
-        else if (q->R == NULL) {
-                *p = q->L;
-                free(q);
-        }
-        else {
-                Elm **s = &q->R;
-                Elm *successorPath[10000];
+        } else {
+                Elm *succPath[10000];
                 int m = 0;
+                Elm **s = &q->R;
 
                 while ((*s)->L != NULL) {
-                        successorPath[m++] = *s;
+                        succPath[m++] = *s;
                         s = &(*s)->L;
                 }
 
-                Elm *min = *s;
-                q->x = min->x;
-                *s = min->R;
-                free(min);
+                Elm *succ = *s;
+                q->x = succ->x;
+                *s = succ->R;
+                free(succ);
 
                 for (int i = m - 1; i >= 0; i--) {
-                        Elm *v = successorPath[i];
+                        Elm *v = succPath[i];
+
                         int lh = v->L ? v->L->height : 0;
                         int rh = v->R ? v->R->height : 0;
+
                         v->height = (lh > rh ? lh : rh) + 1;
                         v->len = 1 + (v->L ? v->L->len : 0)
                                    + (v->R ? v->R->len : 0);
                 }
-        }
 
-        for (int i = n - 1; i >= 0; i--) {
-                Elm *v = path[i];
-                int lh = v->L ? v->L->height : 0;
-                int rh = v->R ? v->R->height : 0;
-
-                v->height = (lh > rh ? lh : rh) + 1;
-                v->len = 1 + (v->L ? v->L->len : 0)
-                           + (v->R ? v->R->len : 0);
-        }
-
-        if (q->L != NULL || q->R != NULL) {
                 int lh = q->L ? q->L->height : 0;
                 int rh = q->R ? q->R->height : 0;
 
                 q->height = (lh > rh ? lh : rh) + 1;
                 q->len = 1 + (q->L ? q->L->len : 0)
                            + (q->R ? q->R->len : 0);
-        }     // Функцийг хэрэгжүүлнэ үү
+        }
+
+        for (int i = n - 1; i >= 0; i--) {
+                Elm *v = path[i];
+
+                int lh = v->L ? v->L->height : 0;
+                int rh = v->R ? v->R->height : 0;
+
+                v->height = (lh > rh ? lh : rh) + 1;
+                v->len = 1 + (v->L ? v->L->len : 0)
+                           + (v->R ? v->R->len : 0);
+        }    // Функцийг хэрэгжүүлнэ үү
 }
 
 /*
@@ -174,7 +162,7 @@ Elm **p = &ptree->root;
  */
 int bs_delMin(BST *ptree)
 {
- Elm **p = &ptree->root;
+Elm **p = &ptree->root;
         Elm *path[10000];
         int n = 0;
 
@@ -200,7 +188,7 @@ int bs_delMin(BST *ptree)
                            + (v->R ? v->R->len : 0);
         }
 
-        return x;      // Функцийг хэрэгжүүлнэ үү
+        return x;    // Функцийг хэрэгжүүлнэ үү
 }
 
 /*
@@ -209,20 +197,17 @@ int bs_delMin(BST *ptree)
 void bs_inorder(const BST *ptree)
 {
 
-       if (ptree->root == NULL)
-                return;
-
-        Elm *stack[10000];
-        int top = 0;
+       Elm *stack[10000];
+        int top = -1;
         Elm *p = ptree->root;
 
-        while (p != NULL || top > 0) {
+        while (p != NULL || top >= 0) {
                 while (p != NULL) {
-                        stack[top++] = p;
+                        stack[++top] = p;
                         p = p->L;
                 }
 
-                p = stack[--top];
+                p = stack[top--];
 
                 printf("%d %d %d\n", p->x, p->len, p->height);
 
@@ -239,23 +224,20 @@ void bs_inorder(const BST *ptree)
  */
 int bs_rank(const BST *ptree, int x)
 {
-Elm *p = ptree->root;
+ Elm *p = ptree->root;
         int count = 0;
 
         while (p != NULL) {
-                if (x < p->x)
+                if (x < p->x) {
                         p = p->L;
-                else {
-                        count += 1;
-
-                        if (p->L != NULL)
-                                count += p->L->len;
-
+                } else {
+                        count += 1 + (p->L ? p->L->len : 0);
                         p = p->R;
                 }
         }
 
         return count;
+
        // Функцийг хэрэгжүүлнэ үү
 }
 
@@ -266,12 +248,19 @@ Elm *p = ptree->root;
  */
 int bs_size(const BST *ptree, int x)
 {
-  Elm *p = bs_get(ptree, x);
+ Elm *p = ptree->root;
 
-        if (p == NULL)
-                return -1;
+        while (p != NULL) {
+                if (x == p->x)
+                        return p->len;
 
-        return p->len;       // Функцийг хэрэгжүүлнэ үү
+                if (x < p->x)
+                        p = p->L;
+                else
+                        p = p->R;
+        }
+
+        return -1;      // Функцийг хэрэгжүүлнэ үү
 }
 
 /*
@@ -287,11 +276,11 @@ Elm *bs_floor(const BST *ptree, int x)
                 if (p->x == x)
                         return p;
 
-                if (x < p->x)
-                        p = p->L;
-                else {
+                if (p->x < x) {
                         result = p;
                         p = p->R;
+                } else {
+                        p = p->L;
                 }
         }
 
@@ -312,15 +301,16 @@ Elm *bs_ceiling(const BST *ptree, int x)
                 if (p->x == x)
                         return p;
 
-                if (x > p->x)
-                        p = p->R;
-                else {
+                if (p->x > x) {
                         result = p;
                         p = p->L;
+                } else {
+                        p = p->R;
                 }
         }
 
-        return result;      // Функцийг хэрэгжүүлнэ үү
+        return result;
+    // Функцийг хэрэгжүүлнэ үү
 }
 
 /*
@@ -329,10 +319,17 @@ Elm *bs_ceiling(const BST *ptree, int x)
  */
 int bs_height(const BST *ptree, int x)
 {
- Elm *p = bs_get(ptree, x);
+ Elm *p = ptree->root;
 
-        if (p == NULL)
-                return -1;
+        while (p != NULL) {
+                if (x == p->x)
+                        return p->height;
 
-        return p->height;       // Функцийг хэрэгжүүлнэ үү
+                if (x < p->x)
+                        p = p->L;
+                else
+                        p = p->R;
+        }
+
+        return -1;     // Функцийг хэрэгжүүлнэ үү
 }
