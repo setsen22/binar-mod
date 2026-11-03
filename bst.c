@@ -43,23 +43,9 @@ void bs_put(BST *ptree, int x)
         }
 }
 
-Elm *bs_get(const BST *ptree, int x)
-{
-           Elm *p = ptree->root;
 
-        while (p != NULL) {
-                if (x == p->x)
-                        return p;
-
-                if (x < p->x)
-                        p = p->L;
-                else
-                        p = p->R;
-        }
-
-        return NULL;
         // Функцийг хэрэгжүүлнэ үү
-}
+
 
 /*
   `ptree`-ийн зааж байгаа модноос `x` утгыг хайн олдсон оройн `Elm*` хаягийг буцаана.
